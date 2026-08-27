@@ -1,4 +1,4 @@
-// Package provider implements IntroDB.app marker lookup and submission logic.
+// Package provider implements read-only IntroDB.app marker lookup logic.
 package provider
 
 import (

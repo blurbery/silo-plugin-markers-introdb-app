@@ -32,9 +32,9 @@ start a cooldown instead of triggering request storms.
 
 ## Coordinated Silo changes
 
-- [Server marker refresh, persistence, and read-only provider support](https://github.com/blurbery/silo-server/pull/54)
+- [Server marker refresh, persistence, and read-only provider support](https://github.com/Silo-Server/silo-server/pull/792)
 - [TheIntroDB fallback, caching, and Cloudflare handling](https://github.com/Silo-Server/silo-plugin-markers-theintrodb/pull/5)
-- [Apple/Aether Skip Intro and Skip Credits reliability](https://github.com/blurbery/silo-apple/pull/9)
+- [Apple/Aether Skip Intro and Skip Credits reliability](https://github.com/Silo-Server/silo-apple/pull/203)
 - [Silo catalog entry](https://github.com/Silo-Server/silo-plugins/pull/7)
 
 ## Development
