@@ -1,0 +1,68 @@
+name: Release
+
+on:
+  push:
+    tags: ['v*']
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  build:
+    strategy:
+      matrix:
+        include:
+          - {os: ubuntu-latest, goos: linux, goarch: amd64}
+          - {os: ubuntu-latest, goos: linux, goarch: arm64}
+          - {os: macos-latest, goos: darwin, goarch: arm64}
+    runs-on: ${{ matrix.os }}
+    steps:
+      - uses: actions/checkout@v6
+      - uses: actions/setup-go@v6
+        with:
+          go-version: '1.26'
+      - name: Build plugin binary
+        env:
+          GOOS: ${{ matrix.goos }}
+          GOARCH: ${{ matrix.goarch }}
+          CGO_ENABLED: '0'
+          GOWORK: off
+        run: |
+          mkdir -p dist
+          version="${GITHUB_REF_NAME#v}"
+          if [ "$version" = "$GITHUB_REF_NAME" ]; then version="0.1.0-dev"; fi
+          binary="plugin-${GOOS}-${GOARCH}"
+          go build -trimpath -ldflags="-s -w -X main.version=${version}" -o "dist/${binary}" .
+          checksum=$(shasum -a 256 "dist/${binary}" | awk '{print $1}')
+          printf '%s  %s\n' "$checksum" "$binary" > dist/checksums.txt
+          sed "s/__CHECKSUM__/${checksum}/" manifest.json > "dist/manifest-${GOOS}-${GOARCH}.json"
+      - uses: actions/upload-artifact@v4
+        with:
+          name: plugin-${{ matrix.goos }}-${{ matrix.goarch }}
+          path: dist/
+
+  release:
+    if: startsWith(github.ref, 'refs/tags/v')
+    needs: build
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/download-artifact@v4
+        with:
+          path: artifacts
+      - name: Prepare release assets
+        run: |
+          mkdir -p release
+          : > release/checksums.txt
+          for dir in artifacts/plugin-*; do
+            platform=$(basename "$dir" | sed 's/plugin-//')
+            cp "${dir}/plugin-${platform}" "release/plugin-${platform}"
+            cp "${dir}/manifest-${platform}.json" "release/manifest-${platform}.json"
+            cat "${dir}/checksums.txt" >> release/checksums.txt
+          done
+          sort -u -o release/checksums.txt release/checksums.txt
+      - uses: softprops/action-gh-release@v2
+        with:
+          files: release/*
+          generate_release_notes: true
+
